@@ -24,7 +24,6 @@ set -euo pipefail
 TARGET_NODE="${TARGET_NODE:-}"
 SSH_KEY="${SSH_KEY:-~/.ssh/e2e}"
 GH_TOKEN="${GH_TOKEN:-}"
-GITOPS_REPO="anikinitek-admin/amscams-gitops"
 APP_REPO="anikinitek-admin/amscams"
 ARGOCD_NAMESPACE="${ARGOCD_NAMESPACE:-argocd}"
 ARGOCD_VERSION="${ARGOCD_VERSION:-v2.12.3}"
@@ -120,6 +119,7 @@ main() {
   echo " Target: $TARGET_NODE"
   echo " K3s:    $K3S_VERSION"
   echo " ArgoCD: $ARGOCD_VERSION"
+  echo " App repo: $APP_REPO"
   echo "=========================================="
   echo ""
 
@@ -225,8 +225,8 @@ main() {
   ARGOCD_PWD=$(run "export KUBECONFIG=$KUBECONFIG_REMOTE; kubectl -n $ARGOCD_NAMESPACE get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d")
   run "/usr/local/bin/argocd login localhost:30080 --username admin --password $ARGOCD_PWD --insecure --grpc-web"
 
-  # Add GitHub repo
-  run "/usr/local/bin/argocd repo add https://github.com/${GITOPS_REPO}.git --username anikinitek-admin --password $GH_TOKEN --insecure --grpc-web 2>/dev/null || true"
+  # Add app repo (the same repo holds app code + k8s manifests)
+  run "/usr/local/bin/argocd repo add https://github.com/${APP_REPO}.git --username anikinitek-admin --password $GH_TOKEN --insecure --grpc-web 2>/dev/null || true"
 
   success "ArgoCD connected to GitHub"
   echo "  ArgoCD URL: https://${TARGET_NODE}:30080"
@@ -245,9 +245,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/anikinitek-admin/amscams-gitops.git
+    repoURL: https://github.com/anikinitek-admin/amscams.git
     targetRevision: main
-    path: amscams
+    path: k8s
   destination:
     server: https://kubernetes.default.svc
     namespace: amscams
@@ -272,7 +272,8 @@ EOF"
   echo "=========================================="
   echo ""
   echo " ArgoCD UI:       https://${TARGET_NODE}:30080"
-  echo " GitOps repo:     https://github.com/${GITOPS_REPO}"
+  echo " App repo:        https://github.com/${APP_REPO}"
+  echo " App path in repo: k8s/"
   echo " Kubeconfig:      ~/.kube/config"
   echo ""
   echo " Next steps:"
