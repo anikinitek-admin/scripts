@@ -94,10 +94,10 @@ run() {
 # Wait for command success with timeout
 #-------------------------------------------------------------------------------
 wait_for() {
-  local desc="$1"
+  local desc="${1:-}"
   local timeout="${2:-120}"
   local interval="${3:-5}"
-  local cmd="$4"
+  local cmd="${4:-}"
   local elapsed=0
   while ! eval "$cmd" &>/dev/null; do
     elapsed=$((elapsed + interval))
